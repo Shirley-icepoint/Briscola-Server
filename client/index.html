@@ -1,0 +1,68 @@
+<html>
+	<body>
+		<div>userId: <span id='userId'></span></div>
+		<div>cards: <span id='cards'></span></div>
+    <div >
+      call: <input type="text" id="point"><br>
+      <button disabled id="submit" onclick="makeCall()">call</button>
+      <button disabled id="pass" onclick="pass()">pass</button>
+    </div>
+	</body>
+</html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.1/socket.io.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script>
+  var socket = io('http://localhost:3000');
+  var userId;
+  socket.on('assignUserId', function (data) {
+    userId = data.userId;
+    $('#userId').text(userId);
+  });
+
+  socket.on('start', function() {
+  	console.log('start');
+    const xmlHttp = new XMLHttpRequest();
+    const url = "http://localhost:3000/init?userId="+userId;
+    xmlHttp.open( "GET", url , false );
+    xmlHttp.send( null );
+    $('#cards').text(xmlHttp.responseText);
+    if (userId === 1) {
+      $('#submit').prop('disabled', false);
+      $('#pass').prop('disabled', false);
+    }
+  });
+
+  socket.on('nextCall', function(data) {
+    $('#point').text(data.maxPoint);
+    if (userId === data.userId) {
+      $('#submit').prop('disabled', false);
+      $('#pass').prop('disabled', false);
+    }
+  });
+
+  // socket.on('assignCards', function(data) {
+  // 	console.log('assignCards');
+  // 	$('#cards').text(data.cards);
+  // });
+
+
+
+  // make a call
+  var makeCall = function() {
+    $('#submit').prop('disabled', true);
+    $('#pass').prop('disabled', true);
+    const point = $('#point').val();
+    socket.emit('makeCall', {userId, point});
+  };
+
+  // cannot beat it? I pass...
+  var pass = function() {
+    $('#submit').prop('disabled', true);
+    $('#pass').prop('disabled', true);
+    socket.emit('makeCall', {userId, point:-1});
+  }
+
+  window.onbeforeunload = function() {
+  	socket.disconnect();
+  };
+</script>
