@@ -41,6 +41,19 @@ server.listen(3000, function() {
 });
 
 var clientNum = 0; // number of clients in the room
+var callStatus = _.fill(Array(5), false);
+var max = {userId: -1, maxPoint: -1};
+var nextUser = function(data) {
+	if (data.point > max.maxPoint) {
+		max.maxPoint = data.point;
+		max.userId = userId;
+	}
+	const id = data.userId === 5? 1: data.userId +1;
+	for (var i = id; i < 5; i++) {
+		if (!callStatus[i]) return i;
+	}
+	return -1;
+}
 io.on('connection', function (socket) {
 	if (clientNum === 5) {
 		socket.disconnect();
@@ -58,9 +71,12 @@ io.on('connection', function (socket) {
 
 	socket.on('makeCall', function(data) {
 		console.log('makdeCall: ' + data.point);
-		var userId = nextUser(data.userId);
-		socket.broadcast.emit('nextCall', {userId, maxPoint:data.point});
-
+		var userId = nextUser(data);
+		if nextUser ( !== -1) socket.broadcast.emit('nextCall', {userId, maxPoint:data.point});
+		else {
+			socket.broadcast.emit('callPartner', max);
+			socket.emit('callPartner', max);
+		}
 	});
 	// socket.on('askForCards', function(data) {
 	// 	socket.emit('assignCards', {cards: cards[data.userId-1]});
